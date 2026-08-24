@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NovaGen Tutorial - From SQL DDL to a Running REST API</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #10b981;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --text: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --code-bg: #0d1117;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            padding: 3rem 2rem;
+            background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-dark) 100%);
+            border-bottom: 1px solid var(--border);
+        }
+
+        h1 {
+            font-size: 2.75rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.75rem;
+        }
+
+        .tagline {
+            font-size: 1.15rem;
+            color: var(--text-muted);
+            max-width: 620px;
+            margin: 0 auto;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: var(--primary);
+            color: white;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-top: 1rem;
+        }
+
+        nav {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        nav a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        nav a:hover {
+            color: var(--primary);
+        }
+
+        section {
+            padding: 2.5rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h2 {
+            font-size: 1.9rem;
+            margin-bottom: 1.25rem;
+            color: var(--primary);
+        }
+
+        h3 {
+            font-size: 1.35rem;
+            margin: 1.5rem 0 0.75rem;
+            color: var(--secondary);
+        }
+
+        h4 {
+            font-size: 1.05rem;
+            margin: 1rem 0 0.5rem;
+            color: var(--text);
+        }
+
+        p {
+            margin-bottom: 1rem;
+            color: var(--text-muted);
+        }
+
+        li {
+            color: var(--text-muted);
+            margin-left: 1.25rem;
+            margin-bottom: 0.35rem;
+        }
+
+        .code-block {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin: 1rem 0;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .code-block pre {
+            margin: 0;
+            font-family: 'Fira Code', 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            line-height: 1.7;
+        }
+
+        .code-block code {
+            font-family: inherit;
+        }
+
+        .code-block.bash::before {
+            content: "Terminal";
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: var(--secondary);
+            padding: 0.25rem 0.75rem;
+            border-radius: 0 8px 0 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .code-block.sql::before {
+            content: "SQL";
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: #f97316;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0 8px 0 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .code-block.python::before {
+            content: "Python";
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: #3776ab;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0 8px 0 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .code-block.json::before {
+            content: "JSON";
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: var(--text-muted);
+            padding: 0.25rem 0.75rem;
+            border-radius: 0 8px 0 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .code-block.output::before {
+            content: "Output";
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: var(--border);
+            padding: 0.25rem 0.75rem;
+            border-radius: 0 8px 0 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        th, td {
+            padding: 0.65rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        th {
+            background: var(--bg-card);
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .endpoint-method {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-right: 0.5rem;
+        }
+
+        .get { background: #22c55e; color: #000; }
+        .post { background: #3b82f6; color: #fff; }
+        .put { background: #f59e0b; color: #000; }
+        .delete { background: #ef4444; color: #fff; }
+
+        .file-tree {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            margin: 1rem 0;
+        }
+
+        .file-tree .folder { color: #60a5fa; }
+        .file-tree .file { color: var(--text); }
+        .file-tree .indent { padding-left: 1.5rem; }
+
+        .tip {
+            background: rgba(99, 102, 241, 0.1);
+            border-left: 4px solid var(--primary);
+            padding: 1rem;
+            border-radius: 0 8px 8px 0;
+            margin: 1rem 0;
+            color: var(--text-muted);
+        }
+
+        .warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-left: 4px solid #f59e0b;
+            padding: 1rem;
+            border-radius: 0 8px 8px 0;
+            margin: 1rem 0;
+            color: var(--text-muted);
+        }
+
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 9999px;
+            background: var(--primary);
+            color: white;
+            font-weight: 700;
+            margin-right: 0.5rem;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2.5rem;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border);
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>NovaGen Tutorial</h1>
+        <p class="tagline">Go from a plain SQL DDL file to a running REST API, step by step.</p>
+        <span class="badge">Step-by-Step Guide</span>
+        <span class="badge" style="background: var(--secondary);">Flask + Crow</span>
+        <span class="badge" style="background: #61dafb;">React Frontend</span>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="#prerequisites">Prerequisites</a></li>
+            <li><a href="#build">Building NovaGen</a></li>
+            <li><a href="#step1">Step 1: Inspect Your Schema</a></li>
+            <li><a href="#step2">Step 2: Generate a Flask API</a></li>
+            <li><a href="#step3">Step 3: Run and Test</a></li>
+            <li><a href="#step4">Step 4: Add a React Frontend</a></li>
+            <li><a href="#step5">Step 5: The C++ Crow Option</a></li>
+            <li><a href="#northwind">Worked Example: Northwind</a></li>
+            <li><a href="#structure">Generated Project Structure</a></li>
+            <li><a href="#troubleshooting">Troubleshooting</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+
+        <section id="prerequisites">
+            <h2>Prerequisites</h2>
+            <p>
+                NovaGen is a C++17 command-line tool. It only needs to be <strong>built once</strong> — the
+                projects it generates are plain Python/C++/TypeScript projects you run with your normal tools.
+            </p>
+            <table>
+                <tr><th>Tool</th><th>Required For</th><th>Notes</th></tr>
+                <tr><td>CMake 3.16+</td><td>Building NovaGen</td><td><code>cmake --version</code></td></tr>
+                <tr><td>C++17 compiler (GCC/Clang/MSVC)</td><td>Building NovaGen</td><td>On Windows, MSYS2 UCRT64 GCC works well</td></tr>
+                <tr><td>Python 3.8+</td><td>Running Flask / FastAPI projects</td><td>Only if you use a Python framework</td></tr>
+                <tr><td>Node.js 16+</td><td>Running React / Angular frontends</td><td>Only if you generate a frontend</td></tr>
+                <tr><td>Docker (optional)</td><td>Containerized deployment</td><td>Every generated project ships a Dockerfile</td></tr>
+            </table>
+
+            <div class="warning">
+                <strong>Windows + MSYS2 note:</strong> if the NovaGen compiler or the generated
+                <code>novagen.exe</code> crashes at startup with a DLL error, make sure the MSYS2 UCRT64
+                bin directory comes first on your PATH. Git's bundled DLLs (<code>libstdc++-6.dll</code>,
+                <code>libgcc_s_seh-1.dll</code>) conflict with the UCRT64 runtime.
+            </div>
+            <div class="code-block bash">
+<pre># Windows (PowerShell) — prepend MSYS2 UCRT64 bin
+$env:PATH = "C:\msys64\ucrt64\bin;" + $env:PATH
+
+# If CMake can't find pkg-config, point it at the MSYS2 pkgconfig dir
+$env:PKG_CONFIG_PATH = "C:\msys64\ucrt64\lib\pkgconfig"</pre>
+            </div>
+        </section>
+
+        <section id="build">
+            <h2>Building NovaGen</h2>
+            <p>Clone or copy the source, then configure and build with CMake:</p>
+            <div class="code-block bash">
+<pre>cd novagen
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j8</pre>
+            </div>
+            <p>The binary is placed at <code>build/novagen.exe</code> (Windows) or <code>build/novagen</code> (Linux/macOS). Verify it works:</p>
+            <div class="code-block bash">
+<pre>./build/novagen.exe --version
+# NovaGen v1.0.0 - REST API Generator</pre>
+            </div>
+            <div class="tip">
+                <strong>Tip:</strong> every command below uses <code>./build/novagen.exe</code> — on Linux/macOS
+                drop the <code>.exe</code> and the leading <code>./</code> (or use an alias).
+            </div>
+        </section>
+
+        <section id="step1">
+            <h2>Step 1: Inspect Your Schema</h2>
+            <p>
+                Point NovaGen at any SQL DDL file — MySQL, PostgreSQL, SQLite, T-SQL (SQL Server), or
+                Oracle — and it will tell you exactly which tables and relationships it detected:
+            </p>
+            <div class="code-block bash">
+<pre>./build/novagen.exe --input schema.sql --list-tables</pre>
+            </div>
+            <div class="code-block output">
+<pre>NovaGen v1.0.0 - crow REST API Generator
+Parsing SQL DDL...
+Found 13 table(s):
+  - Employees (18 columns, 1 FKs)
+  - Categories (4 columns, 0 FKs)
+  - Customers (11 columns, 0 FKs)
+  - Shippers (3 columns, 0 FKs)
+  - Suppliers (12 columns, 0 FKs)
+  - Orders (14 columns, 3 FKs)
+  - Products (10 columns, 2 FKs)
+  - Order Details (5 columns, 2 FKs)
+  - ...</pre>
+            </div>
+            <p>
+                Primary keys can come from inline column constraints, <code>CONSTRAINT ... PRIMARY KEY (...)</code>
+                clauses, or later <code>ALTER TABLE ... ADD CONSTRAINT ... PRIMARY KEY</code> statements —
+                NovaGen applies all of them, so T-SQL schemas like Northwind parse fully.
+            </p>
+        </section>
+
+        <section id="step2">
+            <h2>Step 2: Generate a Flask API</h2>
+            <p>Generate a complete Flask project with one command:</p>
+            <div class="code-block bash">
+<pre>./build/novagen.exe --input schema.sql --framework flask --output . --project myapi</pre>
+            </div>
+            <div class="code-block output">
+<pre>Generating project: myapi
+Output: ".\myapi"
+Frontend: react
+
+Project generated successfully!
+
+To run (Flask):
+  cd ".\myapi"
+  pip install -r requirements.txt
+  python run.py
+
+API available at http://localhost:8080/api</pre>
+            </div>
+            <div class="tip">
+                <strong>Tip:</strong> add <code>--frontend none</code> if you only want the API and no
+                frontend directory. Run <code>--help</code> to see all framework and frontend options.
+            </div>
+
+            <h3>Generated Flask layout</h3>
+            <div class="file-tree">
+                <div class="folder">myapi/</div>
+                <div class="file indent">├── run.py</div>
+                <div class="file indent">├── requirements.txt</div>
+                <div class="file indent">├── config.py</div>
+                <div class="file indent">├── Dockerfile</div>
+                <div class="file indent">├── docker-compose.yml</div>
+                <div class="folder indent">├── app/</div>
+                <div class="file indent">│   ├── __init__.py</div>
+                <div class="folder indent">│   ├── models/</div>
+                <div class="file indent">│   │   └── __init__.py</div>
+                <div class="folder indent">│   ├── routes/</div>
+                <div class="file indent">│   │   └── __init__.py</div>
+                <div class="file indent">│   └── durable_functions.py</div>
+                <div class="folder indent">├── tests/</div>
+                <div class="folder indent">└── data/</div>
+            </div>
+        </section>
+
+        <section id="step3">
+            <h2>Step 3: Run and Test</h2>
+            <h3>Start the server</h3>
+            <div class="code-block bash">
+<pre>cd myapi
+pip install -r requirements.txt
+python run.py</pre>
+            </div>
+            <p>The database file (SQLite) is created automatically on first run under <code>data/</code>.</p>
+
+            <h3>Exercise the API</h3>
+            <p>Every generated project exposes the same REST surface under <code>/api</code>:</p>
+            <table>
+                <tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+                <tr><td><span class="endpoint-method get">GET</span></td><td><code>/api/{table}</code></td><td>List all records</td></tr>
+                <tr><td><span class="endpoint-method get">GET</span></td><td><code>/api/{table}/{id}</code></td><td>Get record by ID</td></tr>
+                <tr><td><span class="endpoint-method post">POST</span></td><td><code>/api/{table}</code></td><td>Create a record</td></tr>
+                <tr><td><span class="endpoint-method put">PUT</span></td><td><code>/api/{table}/{id}</code></td><td>Update a record</td></tr>
+                <tr><td><span class="endpoint-method delete">DELETE</span></td><td><code>/api/{table}/{id}</code></td><td>Delete a record</td></tr>
+                <tr><td><span class="endpoint-method get">GET</span></td><td><code>/api/{table}/count</code></td><td>Row count</td></tr>
+                <tr><td><span class="endpoint-method get">GET</span></td><td><code>/health</code></td><td>Health check</td></tr>
+            </table>
+            <div class="code-block bash">
+<pre># Health check
+curl http://localhost:8080/health
+
+# Create
+curl -X POST http://localhost:8080/api/users \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Alice", "email": "alice@example.com"}'
+
+# List
+curl http://localhost:8080/api/users
+
+# Get by ID (string and integer PKs both work)
+curl http://localhost:8080/api/users/1
+
+# Count
+curl http://localhost:8080/api/users/count</pre>
+            </div>
+            <div class="code-block json">
+<pre>// POST /api/users
+{
+  "id": 1,
+  "name": "Alice",
+  "email": "alice@example.com",
+  "created_at": "Sun, 16 Aug 2026 11:01:12 GMT"
+}</pre>
+            </div>
+        </section>
+
+        <section id="step4">
+            <h2>Step 4: Add a React Frontend</h2>
+            <p>
+                Regenerate with <code>--frontend react</code> (the default) to get a companion
+                <code>&lt;project&gt;-frontend/</code> directory pre-wired to your API:
+            </p>
+            <div class="code-block bash">
+<pre>./build/novagen.exe --input schema.sql --framework flask --frontend react \
+  --bundler vite --css tailwind --state zustand --project myapi
+
+cd myapi-frontend
+npm install
+npm run dev</pre>
+            </div>
+            <div class="tip">
+                <strong>Tip:</strong> the generated frontend proxies <code>/api</code> to
+                <code>http://localhost:8080</code> during development, so the Flask backend and the
+                Vite dev server can run side by side. Full-stack Docker deployment is one command away:
+                <code>docker-compose up --build</code>.
+            </div>
+        </section>
+
+        <section id="step5">
+            <h2>Step 5: The C++ Crow Option</h2>
+            <p>Crow is the default framework — a high-performance C++ backend with zero runtime dependencies:</p>
+            <div class="code-block bash">
+<pre>./build/novagen.exe --input schema.sql --project myapi   # -f crow is default
+
+cd myapi
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake --build . -j8
+./myapi --port 8080</pre>
+            </div>
+        </section>
+
+        <section id="northwind">
+            <h2>Worked Example: Northwind (T-SQL)</h2>
+            <p>
+                The classic Microsoft Northwind script is real-world T-SQL: quoted identifiers, bracketed
+                <code>[dbo].[Table]</code> names, <code>IDENTITY</code> columns, <code>GO</code> batch
+                separators, and <code>ALTER TABLE ... ADD CONSTRAINT</code> keys. NovaGen handles all of it.
+            </p>
+            <div class="code-block bash">
+<pre># 1. Download the Northwind schema
+curl -o northwind_schema.sql \
+  https://raw.githubusercontent.com/microsoft/sql-server-samples/master/samples/databases/northwind-pubs/instnwnd.sql
+
+# 2. Confirm all 13 tables are detected
+./build/novagen.exe --input northwind_schema.sql --list-tables
+
+# 3. Generate the Flask API on your Desktop
+./build/novagen.exe --input northwind_schema.sql --framework flask --output . --project northwind
+
+# 4. Run it
+cd northwind
+pip install -r requirements.txt
+python run.py</pre>
+            </div>
+            <div class="code-block output">
+<pre># Endpoints come from the tables:
+GET  /api/categories          # list categories
+POST /api/customers           # create a customer (string PK)
+GET  /api/customers/ALFKI     # get customer by string PK
+GET  /api/products            # list products
+GET  /api/orders              # list orders (FKs to customers/employees/shippers)
+GET  /api/order-details       # composite-key table "Order Details"
+GET  /api/regions             # PK added via ALTER TABLE ... PRIMARY KEY</pre>
+            </div>
+            <div class="warning">
+                <strong>Note:</strong> the schema describes the tables but not the seed data — the generated
+                SQLite database starts empty. Use <code>POST</code> to insert rows, or point the app at your
+                real Northwind database by setting the <code>DATABASE_URL</code> environment variable in
+                <code>config.py</code>.
+            </div>
+        </section>
+
+        <section id="structure">
+            <h2>Generated Project Structure</h2>
+            <p>
+                Backend projects are self-contained. Flask and FastAPI projects are ready to run immediately;
+                Crow projects just need a <code>cmake --build</code>.
+            </p>
+            <table>
+                <tr><th>File / Directory</th><th>Purpose</th></tr>
+                <tr><td><code>run.py</code> (Flask) / <code>app/main.py</code> (FastAPI) / <code>src/main.cpp</code> (Crow)</td><td>Entry point</td></tr>
+                <tr><td><code>app/models/</code></td><td>ORM models, one per table, with FK relationships</td></tr>
+                <tr><td><code>app/routes/</code></td><td>CRUD route handlers and async orchestration hooks</td></tr>
+                <tr><td><code>tests/</code></td><td>Generated pytest test suite</td></tr>
+                <tr><td><code>Dockerfile</code>, <code>docker-compose.yml</code></td><td>Containerized backend + frontend</td></tr>
+                <tr><td><code>&lt;project&gt;-frontend/</code></td><td>React / Angular / Android app wired to the API</td></tr>
+            </table>
+        </section>
+
+        <section id="troubleshooting">
+            <h2>Troubleshooting</h2>
+
+            <h4>novagen.exe crashes at launch on Windows</h4>
+            <p>
+                Almost always a PATH conflict with Git's runtime DLLs. Prepend the MSYS2 UCRT64 bin directory
+                to PATH before running the build and the generated binary.
+            </p>
+
+            <h4>CMake fails: "pkg-config not found"</h4>
+            <p>
+                Set <code>PKG_CONFIG_PATH</code> to the MSYS2 pkgconfig directory (see Prerequisites) and
+                make sure <code>pkg-config.exe</code> is on your PATH.
+            </p>
+
+            <h4>Some tables are missing from --list-tables</h4>
+            <p>
+                Check the DDL: quoted identifiers like <code>[dbo].[Region]</code> are now supported, and
+                <code>ALTER TABLE ... ADD CONSTRAINT ... PRIMARY KEY / FOREIGN KEY</code> statements are
+                applied. If a table still doesn't appear, confirm the statement starts with
+                <code>CREATE TABLE</code> and passes the <code>--list-tables</code> check.
+            </p>
+
+            <h4>Generated Flask app fails to start</h4>
+            <p>
+                Make sure the <code>data/</code> directory can be created next to <code>run.py</code>
+                (the app creates it automatically), and that every table has a primary key. Tables without
+                a PK cannot be mapped by SQLAlchemy — add the PK to the DDL.
+            </p>
+
+            <h4>String primary keys return 404</h4>
+            <p>
+                NovaGen emits the correct Flask route converter (<code>&lt;string:...&gt;</code> for text PKs,
+                <code>&lt;int:...&gt;</code> for numeric ones) automatically. If you see a 404, double-check
+                the exact table path in <code>app/routes/__init__.py</code>.
+            </p>
+
+            <h4>404 on the frontend dev server</h4>
+            <p>
+                Start the backend first (<code>python run.py</code> on port 8080), then
+                <code>npm run dev</code>. The Vite proxy forwards <code>/api</code> calls to the backend.
+            </p>
+        </section>
+    </div>
+
+    <footer>
+        <p>
+            NovaGen v1.0.0 | REST API Generator<br>
+            <a href="index.html" style="color: var(--primary);">Back to Documentation</a>
+        </p>
+    </footer>
+
+    <script>
+        document.querySelectorAll('nav a').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

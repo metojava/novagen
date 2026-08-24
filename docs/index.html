@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NovaGen - REST API Generator from SQL DDL</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #10b981;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --text: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border: #334155;
+            --code-bg: #0d1117;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-dark) 100%);
+            border-bottom: 1px solid var(--border);
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+
+        .tagline {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: var(--primary);
+            color: white;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-top: 1rem;
+        }
+
+        nav {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        nav a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        nav a:hover {
+            color: var(--primary);
+        }
+
+        section {
+            padding: 3rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h2 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+        }
+
+        h3 {
+            font-size: 1.5rem;
+            margin: 1.5rem 0 1rem;
+            color: var(--secondary);
+        }
+
+        h4 {
+            font-size: 1.125rem;
+            margin: 1rem 0 0.5rem;
+            color: var(--text);
+        }
+
+        p {
+            margin-bottom: 1rem;
+            color: var(--text-muted);
+        }
+
+        .code-block {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .code-block pre {
+            margin: 0;
+            font-family: 'Fira Code', 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            line-height: 1.7;
+        }
+
+        .code-block code {
+            font-family: inherit;
+        }
+
+        .code-block.sql::before {
+            content: "SQL";
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: #f97316;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0 8px 0 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .code-block.bash::before {
+            content: "Terminal";
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: var(--secondary);
+            padding: 0.25rem 0.75rem;
+            border-radius: 0 8px 0 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .code-block.cpp::before {
+            content: "C++";
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: #00599c;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0 8px 0 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .code-block.python::before {
+            content: "Python";
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: #3776ab;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0 8px 0 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .code-block.js::before {
+            content: "JavaScript";
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: #f7df1e;
+            color: #000;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0 8px 0 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .code-block.json::before {
+            content: "JSON";
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: var(--text-muted);
+            padding: 0.25rem 0.75rem;
+            border-radius: 0 8px 0 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .code-block.output::before {
+            content: "Output";
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: var(--border);
+            padding: 0.25rem 0.75rem;
+            border-radius: 0 8px 0 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary);
+        }
+
+        .card h4 {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card .icon {
+            font-size: 1.5rem;
+        }
+
+        .card p {
+            font-size: 0.9rem;
+        }
+
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            list-style: none;
+        }
+
+        .feature-list li {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--bg-card);
+            border-radius: 8px;
+        }
+
+        .feature-list .check {
+            color: var(--secondary);
+            font-weight: bold;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--bg-card);
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .endpoint-method {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-right: 0.5rem;
+        }
+
+        .get { background: #22c55e; color: #000; }
+        .post { background: #3b82f6; color: #fff; }
+        .put { background: #f59e0b; color: #000; }
+        .delete { background: #ef4444; color: #fff; }
+
+        .file-tree {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.875rem;
+        }
+
+        .file-tree .folder { color: #60a5fa; }
+        .file-tree .file { color: var(--text); }
+        .file-tree .indent { padding-left: 1.5rem; }
+
+        .tip {
+            background: rgba(99, 102, 241, 0.1);
+            border-left: 4px solid var(--primary);
+            padding: 1rem;
+            border-radius: 0 8px 8px 0;
+            margin: 1rem 0;
+        }
+
+        .warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-left: 4px solid #f59e0b;
+            padding: 1rem;
+            border-radius: 0 8px 8px 0;
+            margin: 1rem 0;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin: 1rem 0;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 0.5rem 1rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            border-color: var(--primary);
+        }
+
+        .tab.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .two-col {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 2.5rem;
+            }
+        }
+
+        footer {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>NovaGen</h1>
+        <p class="tagline">Transform SQL DDL into production-ready REST APIs with optional React frontend</p>
+        <span class="badge">C++17</span>
+        <span class="badge" style="background: var(--secondary);">Crow Framework</span>
+        <span class="badge" style="background: #f97316;">SQLite3</span>
+        <span class="badge" style="background: #61dafb;">React Frontend</span>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="#overview">Overview</a></li>
+            <li><a href="#frameworks">Frameworks</a></li>
+            <li><a href="#frontend">React Frontend</a></li>
+            <li><a href="#usage">Usage</a></li>
+            <li><a href="#examples">Examples</a></li>
+            <li><a href="#stack-options">Stack Options</a></li>
+            <li><a href="tutorial.html">Tutorial</a></li>
+            <li><a href="README.md">Database Export</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <section id="overview">
+            <h2>Overview</h2>
+            <p>
+                <strong>NovaGen</strong> is a code generator that parses SQL DDL (Data Definition Language)
+                and generates complete, production-ready REST API projects. You can choose from multiple
+                backend frameworks and optionally generate a React frontend.
+            </p>
+
+            <ul class="feature-list">
+                <li><span class="check">✓</span> SQL DDL Parsing with FK support</li>
+                <li><span class="check">✓</span> Multiple Backend Frameworks</li>
+                <li><span class="check">✓</span> Optional React Frontend</li>
+                <li><span class="check">✓</span> SQLite Backend</li>
+                <li><span class="check">✓</span> Docker Support</li>
+                <li><span class="check">✓</span> Unit Tests</li>
+            </ul>
+        </section>
+
+        <section id="frameworks">
+            <h2>Backend Frameworks</h2>
+
+            <div class="grid">
+                <div class="card">
+                    <h4><span class="icon">⚡</span> Crow (C++)</h4>
+                    <p>Fast, lightweight C++ web framework. Header-only with async support. Default choice.</p>
+                    <code>-f crow</code>
+                </div>
+                <div class="card">
+                    <h4><span class="icon">🐍</span> Flask (Python)</h4>
+                    <p>Classic Python microframework. Great for simple APIs with Flask-SQLAlchemy.</p>
+                    <code>-f flask</code>
+                </div>
+                <div class="card">
+                    <h4><span class="icon">⚡</span> FastAPI (Python)</h4>
+                    <p>Modern Python API framework with automatic OpenAPI docs and Pydantic validation.</p>
+                    <code>-f fastapi</code>
+                </div>
+            </div>
+
+            <h3>Example: Generate Different Frameworks</h3>
+            <div class="code-block bash">
+<pre># C++ Crow (default)
+./novagen --input schema.sql --project myapi
+
+# Python Flask
+./novagen --input schema.sql --framework flask --project myapi
+
+# Python FastAPI
+./novagen --input schema.sql --framework fastapi --project myapi</pre>
+            </div>
+        </section>
+
+        <section id="frontend">
+            <h2>React Frontend</h2>
+            <p>
+                Add <code>--frontend</code> or <code>-r</code> to generate a complete React frontend
+                with your choice of bundler, CSS framework, theme, and state management.
+            </p>
+
+            <h3>Frontend Options</h3>
+            <table>
+                <tr><th>Option</th><th>Flag</th><th>Values</th><th>Default</th><th>Description</th></tr>
+                <tr><td>Bundler</td><td><code>-b, --bundler</code></td><td>vite, cra</td><td>vite</td><td>Build tool</td></tr>
+                <tr><td>CSS</td><td><code>-c, --css</code></td><td>tailwind, bootstrap, plain</td><td>tailwind</td><td>CSS framework</td></tr>
+                <tr><td>Theme</td><td><code>-t, --theme</code></td><td>light, dark, auto</td><td>light</td><td>Color theme</td></tr>
+                <tr><td>State</td><td><code>-m, --state</code></td><td>context, zustand, redux</td><td>context</td><td>State management</td></tr>
+            </table>
+
+            <h3>Frontend Stack Combinations</h3>
+            <div class="grid">
+                <div class="card">
+                    <h4>Default Stack</h4>
+                    <p>Vite + Tailwind + Light + Context API</p>
+                    <code>--frontend</code>
+                </div>
+                <div class="card">
+                    <h4>Enterprise Stack</h4>
+                    <p>CRA + Bootstrap + Dark + Redux</p>
+                    <code>--frontend --bundler cra --css bootstrap --theme dark --state redux</code>
+                </div>
+                <div class="card">
+                    <h4>Modern Stack</h4>
+                    <p>Vite + Tailwind + Dark + Zustand</p>
+                    <code>--frontend --css tailwind --theme dark --state zustand</code>
+                </div>
+            </div>
+
+            <h3>Bundlers</h3>
+            <div class="two-col">
+                <div>
+                    <h4>Vite (Recommended)</h4>
+                    <p>Fast development server and optimized production builds. Modern approach.</p>
+                </div>
+                <div>
+                    <h4>CRA (Create React App)</h4>
+                    <p>Classic approach. Familiar structure but slower builds.</p>
+                </div>
+            </div>
+
+            <h3>CSS Frameworks</h3>
+            <div class="grid">
+                <div class="card">
+                    <h4>Tailwind CSS</h4>
+                    <p>Utility-first CSS. Highly customizable, small bundle size. Default choice.</p>
+                </div>
+                <div class="card">
+                    <h4>Bootstrap</h4>
+                    <p>Component-based with React Bootstrap. Familiar API.</p>
+                </div>
+                <div class="card">
+                    <h4>Plain CSS</h4>
+                    <p>Minimal custom CSS with CSS variables. No framework dependency.</p>
+                </div>
+            </div>
+
+            <h3>Themes</h3>
+            <div class="grid">
+                <div class="card">
+                    <h4>Light</h4>
+                    <p>Default light color scheme.</p>
+                </div>
+                <div class="card">
+                    <h4>Dark</h4>
+                    <p>Dark mode with manual toggle.</p>
+                </div>
+                <div class="card">
+                    <h4>Auto</h4>
+                    <p>System preference detection via CSS media query.</p>
+                </div>
+            </div>
+
+            <h3>State Management</h3>
+            <div class="grid">
+                <div class="card">
+                    <h4>Context API (Default)</h4>
+                    <p>React built-in. Simple, no extra dependencies. Uses useReducer.</p>
+                </div>
+                <div class="card">
+                    <h4>Zustand</h4>
+                    <p>Minimal, hook-based. Simple API with good performance.</p>
+                </div>
+                <div class="card">
+                    <h4>Redux Toolkit</h4>
+                    <p>Full Redux with slices. Best for complex state needs.</p>
+                </div>
+            </div>
+
+            <h3>Generated Frontend Structure</h3>
+            <div class="file-tree">
+<div class="folder">myapi-frontend/</div>
+<div class="file indent">├── package.json</div>
+<div class="file indent">├── vite.config.js (or cra.config.js)</div>
+<div class="file indent">├── tailwind.config.js</div>
+<div class="file indent">├── index.html</div>
+<div class="file indent">├── nginx.conf</div>
+<div class="file indent">├── Dockerfile</div>
+<div class="file indent">├── docker-compose.yml</div>
+<div class="folder indent">├── src/</div>
+<div class="file indent">│   ├── main.jsx</div>
+<div class="file indent">│   ├── App.jsx</div>
+<div class="file indent">│   ├── index.css</div>
+<div class="folder indent">│   ├── components/</div>
+<div class="file indent">│   │   ├── UserList.jsx</div>
+<div class="file indent">│   │   ├── UserForm.jsx</div>
+<div class="file indent">│   │   ├── PostList.jsx</div>
+<div class="file indent">│   │   └── PostForm.jsx</div>
+<div class="folder indent">│   ├── services/</div>
+<div class="file indent">│   │   └── api.js</div>
+<div class="folder indent">│   └── store/</div>
+<div class="file indent">│       ├── StoreContext.jsx (Context)</div>
+<div class="file indent">│       ├── useStore.js (Zustand)</div>
+<div class="file indent">│       └── index.js + slices/ (Redux)</div>
+            </div>
+        </section>
+
+        <section id="usage">
+            <h2>Usage</h2>
+
+            <h3>Command Line Options</h3>
+            <table>
+                <tr><th>Option</th><th>Description</th><th>Default</th></tr>
+                <tr><td><code>-i, --input FILE</code></td><td>Input SQL DDL file</td><td>-</td></tr>
+                <tr><td><code>-s, --sql STRING</code></td><td>SQL DDL as string</td><td>-</td></tr>
+                <tr><td><code>-o, --output DIR</code></td><td>Output directory</td><td>./output</td></tr>
+                <tr><td><code>-p, --project NAME</code></td><td>Project name</td><td>api_server</td></tr>
+                <tr><td><code>-n, --namespace NS</code></td><td>Namespace for routes/models</td><td>app</td></tr>
+                <tr><td><code>-f, --framework FR</code></td><td>Backend framework: crow, flask, fastapi, springboot</td><td>crow</td></tr>
+                <tr><td><code>--security SEC</code></td><td>Security: jwt, oauth2, saml, owasp, ldap</td><td>none</td></tr>
+                <tr><td><code>--orm ORM</code></td><td>ORM: sqlalchemy, peewee, slack (Flask/FastAPI)</td><td>sqlalchemy</td></tr>
+                <tr><td><code>-r, --frontend FR</code></td><td>Frontend: react, angular, android</td><td>react</td></tr>
+                <tr><td><code>-b, --bundler BN</code></td><td>Bundler: vite, cra, webpack (React) / esbuild, webpack (Angular)</td><td>vite/esbuild</td></tr>
+                <tr><td><code>-e, --react-framework FR</code></td><td>React language: typescript, javascript</td><td>typescript</td></tr>
+                <tr><td><code>-c, --css CSS</code></td><td>CSS: tailwind, bootstrap, plain, material</td><td>tailwind</td></tr>
+                <tr><td><code>-t, --theme THEME</code></td><td>Theme: light, dark, auto</td><td>light</td></tr>
+                <tr><td><code>-m, --state STATE</code></td><td>State: context, zustand, redux (React) / service, ngrx, redux, signals (Angular)</td><td>context/service</td></tr>
+                <tr><td><code>--angular-http HTTP</code></td><td>HTTP: httpclient, fetch, axios (Angular)</td><td>httpclient</td></tr>
+                <tr><td><code>--angular-css CSS</code></td><td>CSS: tailwind, bootstrap, plain, material (Angular)</td><td>tailwind</td></tr>
+                <tr><td><code>--angular-state STATE</code></td><td>State: service, ngrx, redux, signals (Angular)</td><td>service</td></tr>
+                <tr><td><code>--angular-bundler BN</code></td><td>Bundler: esbuild, webpack (Angular)</td><td>esbuild</td></tr>
+                <tr><td><code>--standalone</code></td><td>Standalone components (Angular)</td><td>true</td></tr>
+                <tr><td><code>--guards</code></td><td>JWT auth guards (Angular)</td><td>false</td></tr>
+                <tr><td><code>--admin</code></td><td>Admin pages (Angular)</td><td>false</td></tr>
+                <tr><td><code>-l, --list-tables</code></td><td>List parsed tables and exit</td><td>false</td></tr>
+            </table>
+
+            <h3>Basic Usage</h3>
+            <div class="code-block bash">
+<pre># C++ Crow backend only
+./novagen --input schema.sql --project myapi
+
+# Python Flask backend
+./novagen --input schema.sql --framework flask --project myapi
+
+# With React frontend (all defaults)
+./novagen --input schema.sql --frontend --project myapi
+
+# Full stack with custom frontend
+./novagen --input schema.sql --frontend --bundler cra --css bootstrap --state redux --project myapi</pre>
+            </div>
+
+            <h3>Frontend Examples</h3>
+            <div class="code-block bash">
+<pre># Vite + Tailwind + Light + Context (all defaults)
+./novagen --input schema.sql --frontend --project myapi
+
+# Vite + Tailwind + Dark + Zustand
+./novagen --input schema.sql --frontend --css tailwind --theme dark --state zustand --project myapi
+
+# CRA + Bootstrap + Dark + Redux
+./novagen --input schema.sql --frontend --bundler cra --css bootstrap --theme dark --state redux --project myapi
+
+# Vite + Plain CSS + Auto theme + Context
+./novagen --input schema.sql --frontend --css plain --theme auto --project myapi
+
+# Angular with defaults (Esbuild + Tailwind + HttpClient)
+./novagen --input schema.sql --frontend angular --project myapi
+
+# Angular + Webpack + Bootstrap + NgRx
+./novagen --input schema.sql --frontend angular --angular-bundler webpack --angular-css bootstrap --angular-state ngrx --project myapi
+
+# Angular + Material + Signals + Axios + Guards + Admin
+./novagen --input schema.sql --frontend angular --angular-css material --angular-state signals --angular-http axios --guards --admin --project myapi</pre>
+            </div>
+        </section>
+
+        <section id="examples">
+            <h2>Examples</h2>
+
+            <h3>Example 1: Basic CRUD API</h3>
+            <div class="code-block sql">
+<pre>CREATE TABLE users (
+    id INT PRIMARY KEY AUTOINCREMENT,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);</pre>
+            </div>
+
+            <div class="code-block bash">
+<pre># Generate C++ backend only
+./novagen --input schema.sql --project basic-api
+
+# Generate with React frontend
+./novagen --input schema.sql --frontend --project basic-api</pre>
+            </div>
+
+            <h3>Example 2: E-Commerce with Full Stack</h3>
+            <div class="code-block sql">
+<pre>CREATE TABLE customers (
+    id INT PRIMARY KEY AUTOINCREMENT,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    phone VARCHAR(20)
+);
+
+CREATE TABLE products (
+    id INT PRIMARY KEY AUTOINCREMENT,
+    name VARCHAR(200) NOT NULL,
+    price DECIMAL(10,2) NOT NULL,
+    stock INT DEFAULT 0
+);
+
+CREATE TABLE orders (
+    id INT PRIMARY KEY AUTOINCREMENT,
+    customer_id INT NOT NULL,
+    order_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(20) DEFAULT 'pending',
+    FOREIGN KEY (customer_id) REFERENCES customers(id)
+);
+
+CREATE TABLE order_items (
+    id INT PRIMARY KEY AUTOINCREMENT,
+    order_id INT NOT NULL,
+    product_id INT NOT NULL,
+    quantity INT NOT NULL,
+    FOREIGN KEY (order_id) REFERENCES orders(id),
+    FOREIGN KEY (product_id) REFERENCES products(id)
+);</pre>
+            </div>
+
+            <div class="code-block bash">
+<pre># Generate C++ backend
+./novagen --input schema.sql --framework crow --project ecommerce
+
+# Generate Flask backend with React frontend
+./novagen --input schema.sql --framework flask --frontend --project ecommerce
+
+# Generate FastAPI backend with React frontend (Vite + Tailwind + Zustand)
+./novagen --input schema.sql --framework fastapi --frontend --css tailwind --state zustand --project ecommerce</pre>
+            </div>
+
+            <h3>Example 3: Blog API</h3>
+            <div class="code-block sql">
+<pre>CREATE TABLE users (
+    id INT PRIMARY KEY AUTOINCREMENT,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    bio TEXT
+);
+
+CREATE TABLE posts (
+    id INT PRIMARY KEY AUTOINCREMENT,
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    author_id INT NOT NULL,
+    published BOOLEAN DEFAULT FALSE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (author_id) REFERENCES users(id)
+);
+
+CREATE TABLE comments (
+    id INT PRIMARY KEY AUTOINCREMENT,
+    post_id INT NOT NULL,
+    user_id INT NOT NULL,
+    content TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (post_id) REFERENCES posts(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);</pre>
+            </div>
+
+            <div class="code-block bash">
+<pre># Generate with React frontend using CRA + Bootstrap + Redux
+./novagen --input schema.sql --framework crow --frontend --bundler cra --css bootstrap --state redux --project blog</pre>
+            </div>
+        </section>
+
+        <section id="stack-options">
+            <h2>Stack Options Reference</h2>
+
+            <h3>Quick Reference Table</h3>
+            <table>
+                <tr><th>Category</th><th>Option</th><th>Best For</th></tr>
+                <tr><td>Bundler</td><td>vite (default)</td><td>Fast development, modern projects</td></tr>
+                <tr><td>Bundler</td><td>cra</td><td>Familiar CRA structure, legacy projects</td></tr>
+                <tr><td>CSS</td><td>tailwind (default)</td><td>Custom designs, small bundles</td></tr>
+                <tr><td>CSS</td><td>bootstrap</td><td>Rapid development, familiar components</td></tr>
+                <tr><td>CSS</td><td>plain</td><td>Minimal dependencies, custom CSS</td></tr>
+                <tr><td>Theme</td><td>light (default)</td><td>Standard applications</td></tr>
+                <tr><td>Theme</td><td>dark</td><td>Dark mode preference</td></tr>
+                <tr><td>Theme</td><td>auto</td><td>Respect system preference</td></tr>
+                <tr><td>State</td><td>context (default)</td><td>Simple apps, no extra deps</td></tr>
+                <tr><td>State</td><td>zustand</td><td>Medium complexity, performance</td></tr>
+                <tr><td>State</td><td>redux</td><td>Large apps, complex state</td></tr>
+            </table>
+
+            <h3>Backend Framework Comparison</h3>
+            <table>
+                <tr><th>Framework</th><th>Language</th><th>Pros</th><th>Best For</th></tr>
+                <tr><td>Crow</td><td>C++</td><td>Fast, low latency, single executable</td><td>High-performance APIs</td></tr>
+                <tr><td>Flask</td><td>Python</td><td>Simple, flexible, many extensions</td><td>Simple to medium APIs</td></tr>
+                <tr><td>FastAPI</td><td>Python</td><td>Auto docs, Pydantic, async</td><td>Modern Python APIs</td></tr>
+            </table>
+
+            <h3>Running Generated Projects</h3>
+
+            <h4>C++ Crow Backend</h4>
+            <div class="code-block bash">
+<pre>cd myapi
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake --build . -j$(nproc)
+./myapi --port 8080</pre>
+            </div>
+
+            <h4>Python Flask Backend</h4>
+            <div class="code-block bash">
+<pre>cd myapi
+pip install -r requirements.txt
+python run.py</pre>
+            </div>
+
+            <h4>Python FastAPI Backend</h4>
+            <div class="code-block bash">
+<pre>cd myapi
+pip install -r requirements.txt
+uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload</pre>
+            </div>
+
+            <h4>React Frontend</h4>
+            <div class="code-block bash">
+<pre>cd myapi-frontend
+npm install
+npm run dev</pre>
+            </div>
+
+            <h4>Docker Full Stack</h4>
+            <div class="code-block bash">
+<pre>cd myapi-frontend
+docker-compose up --build</pre>
+            </div>
+
+            <h3>API Endpoints</h3>
+            <p>All backend frameworks generate the same REST API structure:</p>
+            <table>
+                <tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+                <tr><td><span class="endpoint-method get">GET</span></td><td><code>/api/{table}</code></td><td>List all records</td></tr>
+                <tr><td><span class="endpoint-method get">GET</span></td><td><code>/api/{table}/{id}</code></td><td>Get record by ID</td></tr>
+                <tr><td><span class="endpoint-method post">POST</span></td><td><code>/api/{table}</code></td><td>Create record</td></tr>
+                <tr><td><span class="endpoint-method put">PUT</span></td><td><code>/api/{table}/{id}</code></td><td>Update record</td></tr>
+                <tr><td><span class="endpoint-method delete">DELETE</span></td><td><code>/api/{table}/{id}</code></td><td>Delete record</td></tr>
+                <tr><td><span class="endpoint-method get">GET</span></td><td><code>/api/{table}/count</code></td><td>Count records</td></tr>
+                <tr><td><span class="endpoint-method get">GET</span></td><td><code>/health</code></td><td>Health check</td></tr>
+            </table>
+        </section>
+    </div>
+
+    <footer>
+        <p>
+            NovaGen v1.0.0 | REST API Generator<br>
+            <a href="https://github.com/CrowCpp/Crow" style="color: var(--primary);">Crow</a> |
+            <a href="https://flask.palletsprojects.com/" style="color: var(--primary);">Flask</a> |
+            <a href="https://fastapi.tiangolo.com/" style="color: var(--primary);">FastAPI</a> |
+            <a href="https://react.dev/" style="color: var(--primary);">React</a>
+        </p>
+    </footer>
+
+    <script>
+        document.querySelectorAll('nav a').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

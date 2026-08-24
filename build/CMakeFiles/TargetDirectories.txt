@@ -1,0 +1,7 @@
+C:/Users/dell/Desktop/novagen/build/CMakeFiles/novagen.dir
+C:/Users/dell/Desktop/novagen/build/CMakeFiles/edit_cache.dir
+C:/Users/dell/Desktop/novagen/build/CMakeFiles/rebuild_cache.dir
+C:/Users/dell/Desktop/novagen/build/CMakeFiles/list_install_components.dir
+C:/Users/dell/Desktop/novagen/build/CMakeFiles/install.dir
+C:/Users/dell/Desktop/novagen/build/CMakeFiles/install/local.dir
+C:/Users/dell/Desktop/novagen/build/CMakeFiles/install/strip.dir
